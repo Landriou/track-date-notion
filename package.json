@@ -1,0 +1,15 @@
+{
+  "name": "track-date-notion",
+  "version": "1.0.0",
+  "description": "Automate the finish date in notion database",
+  "main": "index.js",
+  "engines": {
+    "node": "12.x"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.5",
+    "dotenv": "^16.0.1"
+  },
+  "author": "landriou",
+  "license": "MIT"
+}

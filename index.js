@@ -1,11 +1,3 @@
-/* ================================================================================
-
-	database-update-send-email.
-  
-  Glitch example: https://glitch.com/edit/#!/notion-database-email-update
-  Find the official Notion API client @ https://github.com/makenotion/notion-sdk-js/
-
-================================================================================ */
 
 const { Client } = require("@notionhq/client")
 const dotenv = require("dotenv")
@@ -15,53 +7,30 @@ const notion = new Client({ auth: process.env.NOTION_KEY })
 
 const databaseId = process.env.NOTION_DATABASE_ID
 
-/**
- * Local map to store task pageId to its last status.
- * { [pageId: string]: string }
- */
-const taskPageIdToStatusMap = {}
 
-/**
- * Initialize local data store.
- * Then poll for changes every 5 seconds (5000 milliseconds).
- */
-setInitialTaskPageIdToStatusMap().then(() => {
-  setInterval(findAndSendEmailsForUpdatedTasks, 5000)
+startProcess().then(() => {
+  setInterval(RepeatProcess, 10000)
 })
 
 /**
  * Get and set the initial data store with tasks currently in the database.
  */
-async function setInitialTaskPageIdToStatusMap() {
-  const currentTasks = await getTasksFromNotionDatabase()
-  // for (const { pageId, status } of currentTasks) {
-  //   taskPageIdToStatusMap[pageId] = status
-  // }
+async function startProcess() {
+  const currentTasks = await getTasksAndUpdateFromNotionDatabase()
 }
 
-async function findAndSendEmailsForUpdatedTasks() {
+async function RepeatProcess() {
   // Get the tasks currently in the database.
   console.log("\nFetching tasks from Notion DB...")
-  const currentTasks = await getTasksFromNotionDatabase()
+  const currentTasks = await getTasksAndUpdateFromNotionDatabase()
   console.log(currentTasks)
-  // // Return any tasks that have had their status updated.
-  // const updatedTasks = findUpdatedTasks(currentTasks)
-  
-  // console.log(`Found ${updatedTasks.length} updated tasks.`)
-
-  // // For each updated task, update taskPageIdToStatusMap and send an email notification.
-  // for (const task of updatedTasks) {
-  //   taskPageIdToStatusMap[task.pageId] = task.status
-  //   //await sendUpdateEmailWithSendgrid(task)
-  // }
 }
 
 /**
- * Gets tasks from the database.
+ * Gets tasks from the database and update when date finished is null and status is done
  *
- * @returns {Promise<Array<{ pageId: string, status: string, title: string }>>}
  */
-async function getTasksFromNotionDatabase() {
+async function getTasksAndUpdateFromNotionDatabase() {
   const pages = []
   let cursor = undefined
 
@@ -127,42 +96,10 @@ async function getTasksFromNotionDatabase() {
         tasks.push({ pageId, status, title })
       }
     }
-
-
-    
-
-    
   }
 
    return tasks
 }
-
-/**
-//  * Compares task to most recent version of task stored in taskPageIdToStatusMap.
-//  * Returns any tasks that have a different status than their last version.
-//  *
-//  * @param {Array<{ pageId: string, status: string, title: string }>} currentTasks
-//  * @returns {Array<{ pageId: string, status: string, title: string }>}
-//  */
-// function findUpdatedTasks(currentTasks) {
-//   return currentTasks.filter(currentTask => {
-//     const previousStatus = getPreviousTaskStatus(currentTask)
-//     return currentTask.status !== previousStatus
-//   })
-// }
-
-// /**
-//  * Finds or creates task in local data store and returns its status.
-//  * @param {{ pageId: string; status: string }} task
-//  * @returns {string}
-//  */
-// function getPreviousTaskStatus({ pageId, status }) {
-//   // If this task hasn't been seen before, add to local pageId to status map.
-//   if (!taskPageIdToStatusMap[pageId]) {
-//     taskPageIdToStatusMap[pageId] = status
-//   }
-//   return taskPageIdToStatusMap[pageId]
-// }
 
 /**
  * If property is paginated, returns an array of property items.
@@ -198,70 +135,3 @@ async function getPropertyValue({ pageId, propertyId }) {
 
   return results
 }
-
-// const OPERATION_BATCH_SIZE = 10
-// /***
-//  *
-//  * @param pagesToUpdate: [pages]
-//  * @returns Promise
-//  */
-// async function updatePages(pagesToUpdate) {
-//   const pagesToUpdateChunks = _.chunk(pagesToUpdate, OPERATION_BATCH_SIZE)
-//   for (const pagesToUpdateBatch of pagesToUpdateChunks) {
-//     //Update page status property
-//     if (UPDATE_STATUS_IN_NOTION_DB) {
-//       await Promise.all(
-//         pagesToUpdateBatch.map(({ ...pr }) =>
-//           //Update Notion Page status
-//           notion.pages.update({
-//             page_id: pr.page_id,
-//             properties: {
-//               [STATUS_PROPERTY_NAME]: {
-//                 status: {
-//                   name: pr.pr_status,
-//                 },
-//               },
-//             },
-//           })
-//         )
-//       )
-//     }
-//     //Write Comment
-//     await Promise.all(
-//       pagesToUpdateBatch.map(({ pageId, ...pr }) =>
-//         notion.comments.create({
-//           parent: {
-//             page_id: pr.page_id,
-//           },
-//           rich_text: [
-//             {
-//               type: "text",
-//               text: {
-//                 content: "Your PR",
-//                 link: {
-//                   url: pr.pr_link,
-//                 },
-//               },
-//               annotations: {
-//                 bold: true,
-//               },
-//             },
-//             {
-//               type: "text",
-//               text: {
-//                 content: pr.comment_content,
-//               },
-//             },
-//           ],
-//         })
-//       )
-//     )
-//   }
-//   if (pagesToUpdate.length == 0) {
-//     console.log("Notion Tasks are already up-to-date")
-//   } else {
-//     console.log(
-//       "Successfully updated " + pagesToUpdate.length + " task(s) in Notion"
-//     )
-//   }
-// }
